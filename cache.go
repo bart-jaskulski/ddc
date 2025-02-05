@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -76,6 +77,29 @@ func (c *Cache) EnsureHTMLDir(slug string) error {
 	return os.MkdirAll(c.GetHTMLDir(slug), 0755)
 }
 
+// fixRelativeLinks adds .html extension to relative links in HTML content
+func (c *Cache) fixRelativeLinks(content string) string {
+	re := regexp.MustCompile(`href="([^"]*)"`)
+	return re.ReplaceAllStringFunc(content, func(match string) string {
+		// Extract the URL from href="url"
+		url := match[6 : len(match)-1]
+		
+		// Skip if it's an absolute URL or already has .html extension
+		if strings.Contains(url, "://") || // Has protocol (http://, https://, etc)
+		   strings.HasPrefix(url, "//") || // Protocol-relative URL
+		   strings.HasPrefix(url, "mailto:") || // Email link
+		   strings.HasSuffix(url, ".html") { // Already has .html
+			return match
+		}
+		
+		// Remove any trailing slash
+		url = strings.TrimSuffix(url, "/")
+		
+		// Add .html extension
+		return fmt.Sprintf(`href="%s.html"`, url)
+	})
+}
+
 func (c *Cache) SaveHTML(slug string, path string, content string) error {
 	// Convert dot notation to filesystem path
 	parts := strings.Split(path, ".")
@@ -91,5 +115,8 @@ func (c *Cache) SaveHTML(slug string, path string, content string) error {
 		htmlPath += ".html"
 	}
 
-	return os.WriteFile(htmlPath, []byte(content), 0644)
+	// Fix relative links in content
+	fixedContent := c.fixRelativeLinks(content)
+
+	return os.WriteFile(htmlPath, []byte(fixedContent), 0644)
 }
