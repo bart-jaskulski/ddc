@@ -18,6 +18,17 @@ var rootCmd = &cli.Command{
   },
   Commands: []*cli.Command{
     {
+      Name:    "search",
+      Aliases: []string{"s"},
+      Usage:   "Search across all installed documentation sets",
+      Action: func(ctx context.Context, cmd *cli.Command) error {
+        if len(cmd.Args().Slice()) != 1 {
+          return cli.Exit("Please provide a search query", 1)
+        }
+        return runSearch(cmd.Args().First())
+      },
+    },
+    {
       Name:   "download",
       Aliases: []string{"dl"},
       Usage:  "List and download documentation sets",
@@ -79,6 +90,19 @@ func runList() error {
 	p := tea.NewProgram(model, tea.WithAltScreen())
 
 	_, err := p.Run()
+	return err
+}
+
+func runSearch(query string) error {
+	cache := newCache()
+	
+	model, err := NewSearchModel(cache, query)
+	if err != nil {
+		return err
+	}
+	
+	p := tea.NewProgram(model, tea.WithAltScreen())
+	_, err = p.Run()
 	return err
 }
 
