@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 const DefaultDevDocsDir = ".local/share/devdocs"
@@ -65,4 +66,30 @@ func (c *Cache) DocsetExists(slug string) bool {
 	path := filepath.Join(c.BaseDir, slug)
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+func (c *Cache) GetHTMLDir(slug string) string {
+	return filepath.Join(c.BaseDir, slug, "html")
+}
+
+func (c *Cache) EnsureHTMLDir(slug string) error {
+	return os.MkdirAll(c.GetHTMLDir(slug), 0755)
+}
+
+func (c *Cache) SaveHTML(slug string, path string, content string) error {
+	// Convert dot notation to filesystem path
+	parts := strings.Split(path, ".")
+	htmlPath := filepath.Join(c.GetHTMLDir(slug), filepath.Join(parts...))
+	
+	// Ensure parent directory exists
+	if err := os.MkdirAll(filepath.Dir(htmlPath), 0755); err != nil {
+		return fmt.Errorf("failed to create HTML directory: %w", err)
+	}
+
+	// Add .html extension if not present
+	if !strings.HasSuffix(htmlPath, ".html") {
+		htmlPath += ".html"
+	}
+
+	return os.WriteFile(htmlPath, []byte(content), 0644)
 }

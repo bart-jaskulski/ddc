@@ -40,7 +40,12 @@ func (c *DevDoc) DownloadDocSet(docset Documentation) error {
 		return err
 	}
 
-	return c.cache.SaveMtime(docset.Slug, docset.Mtime)
+	if err := c.cache.SaveMtime(docset.Slug, docset.Mtime); err != nil {
+		return err
+	}
+
+	// Unpack documentation into HTML files
+	return c.unpackHTML(docset.Slug)
 }
 
 func (c *DevDoc) downloadFile(url, filepath string) error {
@@ -97,6 +102,33 @@ func (c *DevDoc) GetDocument(slug, path string) (string, error) {
 
 func (c *DevDoc) IsDocSetInstalled(slug string) bool {
 	return c.cache.DocsetExists(slug)
+}
+
+func (c *DevDoc) unpackHTML(slug string) error {
+	// Ensure HTML directory exists
+	if err := c.cache.EnsureHTMLDir(slug); err != nil {
+		return fmt.Errorf("failed to create HTML directory: %w", err)
+	}
+
+	// Read db.json content
+	data, err := c.cache.GetDB(slug)
+	if err != nil {
+		return fmt.Errorf("failed to read db.json: %w", err)
+	}
+
+	var docs map[string]string
+	if err := json.Unmarshal(data, &docs); err != nil {
+		return fmt.Errorf("failed to parse db.json: %w", err)
+	}
+
+	// Process each documentation entry
+	for path, content := range docs {
+		if err := c.cache.SaveHTML(slug, path, content); err != nil {
+			return fmt.Errorf("failed to save HTML for %s: %w", path, err)
+		}
+	}
+
+	return nil
 }
 
 func (c *DevDoc) NeedsUpdate(docset Documentation) (bool, error) {
