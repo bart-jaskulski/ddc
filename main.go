@@ -1,7 +1,7 @@
 package main
 
 import (
-  "fmt"
+  // "fmt"
   "os"
   "context"
   "log"
@@ -18,8 +18,9 @@ var rootCmd = &cli.Command{
   },
   Commands: []*cli.Command{
     {
-      Name:   "choose",
-      Usage: "Choose and download docsets",
+      Name:   "download",
+      Aliases: []string{"dl"},
+      Usage:  "List and download documentation sets",
       Action: func(ctx context.Context, cmd *cli.Command) error {
         return runChoose(cmd.Args().Slice())
       },
@@ -65,7 +66,7 @@ func runChoose(args []string) error {
     }
   } else {
     // If no args, show interactive selection
-    model := NewChooseModel(docsets)
+    model := NewProviderModel(docsets, cache, client)
     p := tea.NewProgram(model)
 
     finalModel, err := p.Run()
@@ -73,18 +74,11 @@ func runChoose(args []string) error {
       return err
     }
 
-    if m, ok := finalModel.(ChooseModel); ok {
+    if m, ok := finalModel.(ProviderModel); ok {
       selected = m.GetSelected()
     }
   }
 
-  // Download selected docsets
-  for _, ds := range selected {
-    if err := client.DownloadDocSet(ds); err != nil {
-      return fmt.Errorf("failed to download %s: %w", ds.Slug, err)
-    }
-    fmt.Printf("Downloaded %s successfully\n", ds.GetDisplayName())
-  }
 
   return nil
 }
