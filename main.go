@@ -1,7 +1,7 @@
 package main
 
 import (
-  // "fmt"
+  "fmt"
   "os"
   "context"
   "log"
@@ -25,23 +25,59 @@ var rootCmd = &cli.Command{
         return runChoose(cmd.Args().Slice())
       },
     },
+    {
+      Name:   "view",
+      Aliases: []string{"v"},
+      Usage:  "View documentation entries",
+      Action: func(ctx context.Context, cmd *cli.Command) error {
+        if len(cmd.Args().Slice()) != 1 {
+          return cli.Exit("Please provide a documentation name (e.g., wordpress)", 1)
+        }
+        return runView(cmd.Args().First())
+      },
+    },
   },
 }
 
-func runDoc() error {
+func runView(slug string) error {
   cache := newCache()
   client := newDocs(cache)
 
-  docsets, err := client.GetDocumentation("wordpress")
+  if !client.IsDocSetInstalled(slug) {
+    return cli.Exit(fmt.Sprintf("Documentation %s is not installed. Use 'dd download %s' first", slug, slug), 1)
+  }
+
+  docsets, err := client.GetDocumentation(slug)
   if err != nil {
     return err
   }
 
-  model := NewEntryModel(docsets)
+  model := NewEntryModel(docsets, cache, slug)
   p := tea.NewProgram(model, tea.WithAltScreen())
 
   _, err = p.Run()
-  return err
+  if err != nil {
+    return err
+  }
+
+  return nil
+}
+
+func runDoc() error {
+  return nil
+  // cache := newCache()
+  // client := newDocs(cache)
+  //
+  // docsets, err := client.GetDocumentation("wordpress")
+  // if err != nil {
+  //   return err
+  // }
+  //
+  // model := NewEntryModel(docsets)
+  // p := tea.NewProgram(model, tea.WithAltScreen())
+  //
+  // _, err = p.Run()
+  // return err
 }
 
 func runChoose(args []string) error {

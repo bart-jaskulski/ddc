@@ -20,7 +20,7 @@ type Documentation struct {
 	Release     string `json:"release"`
 	Description string `json:"description"`
 
-	entries []DocEntry
+	entries []DocumentEntry
 }
 
 func (d Documentation) FilterValue() string { return d.Name }

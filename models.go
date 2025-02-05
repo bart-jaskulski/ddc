@@ -1,6 +1,6 @@
 package main
 
-type DocEntry struct {
+type DocumentEntry struct {
 	Name string `json:"name"`
 	Path string `json:"path"`
 	Type string `json:"type"`
@@ -15,7 +15,7 @@ func (d *Documentation) GetDisplayName() string {
 }
 
 // SplitFragment splits a path into base path and fragment
-func (e *DocEntry) SplitFragment() (string, string) {
+func (e *DocumentEntry) SplitFragment() (string, string) {
 	for i := 0; i < len(e.Path); i++ {
 		if e.Path[i] == '#' {
 			return e.Path[:i], e.Path[i:]
@@ -25,6 +25,6 @@ func (e *DocEntry) SplitFragment() (string, string) {
 }
 
 // GetDisplayEntry returns a formatted string for UI display
-func (e *DocEntry) GetDisplayEntry() string {
+func (e *DocumentEntry) GetDisplayEntry() string {
 	return e.Name + " (" + e.Type + ")"
 }

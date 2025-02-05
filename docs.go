@@ -65,14 +65,14 @@ func (c *DevDoc) downloadFile(url, filepath string) error {
 	return err
 }
 
-func (c *DevDoc) GetDocumentation(slug string) ([]DocEntry, error) {
+func (c *DevDoc) GetDocumentation(slug string) ([]DocumentEntry, error) {
 	data, err := c.cache.GetIndex(slug)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read index.json: %w", err)
 	}
 
 	var index struct {
-		Entries []DocEntry `json:"entries"`
+		Entries []DocumentEntry `json:"entries"`
 	}
 	if err := json.Unmarshal(data, &index); err != nil {
 		return nil, fmt.Errorf("failed to parse index.json: %w", err)
