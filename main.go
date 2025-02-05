@@ -36,6 +36,14 @@ var rootCmd = &cli.Command{
         return runView(cmd.Args().First())
       },
     },
+    {
+      Name:    "list",
+      Aliases: []string{"ls"},
+      Usage:   "List downloaded documentation sets",
+      Action: func(ctx context.Context, cmd *cli.Command) error {
+        return runList()
+      },
+    },
   },
 }
 
@@ -61,6 +69,17 @@ func runView(slug string) error {
   }
 
   return nil
+}
+
+func runList() error {
+	cache := newCache()
+	client := newDocs(cache)
+
+	model := NewListModel(cache, client)
+	p := tea.NewProgram(model, tea.WithAltScreen())
+
+	_, err := p.Run()
+	return err
 }
 
 func runDoc() error {
