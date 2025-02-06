@@ -83,18 +83,18 @@ func (c *Cache) fixRelativeLinks(content string) string {
 	return re.ReplaceAllStringFunc(content, func(match string) string {
 		// Extract the URL from href="url"
 		url := match[6 : len(match)-1]
-		
+
 		// Skip if it's an absolute URL or already has .html extension
 		if strings.Contains(url, "://") || // Has protocol (http://, https://, etc)
-		   strings.HasPrefix(url, "//") || // Protocol-relative URL
-		   strings.HasPrefix(url, "mailto:") || // Email link
-		   strings.HasSuffix(url, ".html") { // Already has .html
+			strings.HasPrefix(url, "//") || // Protocol-relative URL
+			strings.HasPrefix(url, "mailto:") || // Email link
+			strings.HasSuffix(url, ".html") { // Already has .html
 			return match
 		}
-		
+
 		// Remove any trailing slash
 		url = strings.TrimSuffix(url, "/")
-		
+
 		// Add .html extension
 		return fmt.Sprintf(`href="%s.html"`, url)
 	})
@@ -104,7 +104,7 @@ func (c *Cache) SaveHTML(slug string, path string, content string) error {
 	// Convert dot notation to filesystem path
 	parts := strings.Split(path, ".")
 	htmlPath := filepath.Join(c.GetHTMLDir(slug), filepath.Join(parts...))
-	
+
 	// Ensure parent directory exists
 	if err := os.MkdirAll(filepath.Dir(htmlPath), 0755); err != nil {
 		return fmt.Errorf("failed to create HTML directory: %w", err)

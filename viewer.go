@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"io"
-  "strings"
-  "os/exec"
-  "os"
-  "path/filepath"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -42,7 +42,7 @@ func (d entryDelegate) Render(w io.Writer, m list.Model, index int, listItem lis
 
 	// First line: Name
 	fmt.Fprintf(w, "%s\n", nameStyle.Render(i.Name))
-	
+
 	// Second line: Type and Path
 	fmt.Fprintf(w, "%s %s",
 		typeStyle.Render(i.Type),
@@ -101,7 +101,7 @@ func (m EntryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			selected := m.GetSelected()
 			htmlPath := filepath.Join(m.cache.GetHTMLDir(m.slug), strings.ReplaceAll(selected.Path, ".", string(os.PathSeparator))) + ".html"
-			
+
 			cmd := exec.Command("lynx", htmlPath)
 			cmd.Stdin = os.Stdin
 			cmd.Stdout = os.Stdout

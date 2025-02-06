@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
-	"io"
 	"path/filepath"
 	"strings"
 
@@ -150,4 +150,3 @@ func (m SearchModel) View() string {
 	}
 	return view
 }
-

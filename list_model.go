@@ -1,10 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"io"
-	"fmt"
 	"os"
 )
 
@@ -36,11 +36,11 @@ func (d docListDelegate) Render(w io.Writer, m list.Model, index int, listItem l
 }
 
 type ListModel struct {
-	list     list.Model
-	cache    *Cache
-	client   *DevDoc
-	quitting bool
-  width, height int
+	list          list.Model
+	cache         *Cache
+	client        *DevDoc
+	quitting      bool
+	width, height int
 }
 
 func NewListModel(cache *Cache, client *DevDoc) ListModel {
@@ -78,9 +78,9 @@ func (m ListModel) Init() tea.Cmd {
 
 func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-  case tea.WindowSizeMsg:
-      m.width = msg.Width
-      m.height = msg.Height
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -97,7 +97,7 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				var cmds []tea.Cmd
 				cmd := model.Init()
 				cmds = append(cmds, cmd)
-				
+
 				newModel, cmd := model.Update(tea.WindowSizeMsg{Width: m.width, Height: m.height})
 				if entryModel, ok := newModel.(EntryModel); ok {
 					model = entryModel

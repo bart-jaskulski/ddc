@@ -86,13 +86,13 @@ type removeMsg struct {
 }
 
 type ProviderModel struct {
-	list         list.Model
-	selected     map[string]bool
-	cache        *Cache
-	client       *DevDoc
-	downloading  string // slug of doc being downloaded
-	removing     string // slug of doc being removed
-	confirming   string // slug of doc pending removal confirmation
+	list        list.Model
+	selected    map[string]bool
+	cache       *Cache
+	client      *DevDoc
+	downloading string // slug of doc being downloaded
+	removing    string // slug of doc being removed
+	confirming  string // slug of doc pending removal confirmation
 }
 
 func NewProviderModel(docsets []Documentation, cache *Cache, client *DevDoc) ProviderModel {
@@ -212,7 +212,7 @@ func (m ProviderModel) View() string {
 	if m.confirming != "" {
 		status = fmt.Sprintf("\nAre you sure you want to remove %s? (y/n)", m.confirming)
 	}
-	
+
 	view := "\n" + m.list.View()
 	if status != "" {
 		// Insert status before the last newline (where help text usually is)
