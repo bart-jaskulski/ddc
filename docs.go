@@ -17,8 +17,8 @@ func newDocs(cache *Cache) *DevDoc {
 	return &DevDoc{cache: cache}
 }
 
-func (c *DevDoc) DownloadDocSet(docset Documentation) error {
-	if err := c.cache.EnsureDir(docset.Slug); err != nil {
+func (c *DevDoc) DownloadDocSet(docset *Documentation) error {
+	if err := c.cache.EnsureDir(docset.Kind()); err != nil {
 		return err
 	}
 
@@ -26,7 +26,7 @@ func (c *DevDoc) DownloadDocSet(docset Documentation) error {
 	if err := c.downloadFile(
 		fmt.Sprintf("https://devdocs.io/docs/%s/index.json?%d",
 			docset.Slug, docset.Mtime),
-		filepath.Join(c.cache.GetDocPath(docset.Slug), "index.json"),
+		filepath.Join(c.cache.GetDocPath(docset.Kind()), "index.json"),
 	); err != nil {
 		return err
 	}
@@ -35,17 +35,21 @@ func (c *DevDoc) DownloadDocSet(docset Documentation) error {
 	if err := c.downloadFile(
 		fmt.Sprintf("https://documents.devdocs.io/%s/db.json?%d",
 			docset.Slug, docset.Mtime),
-		filepath.Join(c.cache.GetDocPath(docset.Slug), "db.json"),
+		filepath.Join(c.cache.GetDocPath(docset.Kind()), "db.json"),
 	); err != nil {
 		return err
 	}
 
-	if err := c.cache.SaveMtime(docset.Slug, docset.Mtime); err != nil {
+	if err := c.cache.SaveMeta(docset.Kind(), DocMeta{
+		Release: docset.Release,
+		Version: docset.Version,
+		Mtime:   docset.Mtime,
+	}); err != nil {
 		return err
 	}
 
 	// Unpack documentation into HTML files
-	return c.unpackHTML(docset.Slug)
+	return c.unpackHTML(docset.Kind())
 }
 
 func (c *DevDoc) downloadFile(url, filepath string) error {
@@ -129,17 +133,4 @@ func (c *DevDoc) unpackHTML(slug string) error {
 	}
 
 	return nil
-}
-
-func (c *DevDoc) NeedsUpdate(docset Documentation) (bool, error) {
-	if !c.IsDocSetInstalled(docset.Slug) {
-		return true, nil
-	}
-
-	currentMtime, err := c.cache.GetMtime(docset.Slug)
-	if err != nil {
-		return true, nil
-	}
-
-	return currentMtime < docset.Mtime, nil
 }

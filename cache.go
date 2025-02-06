@@ -1,15 +1,21 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
 const DefaultDevDocsDir = ".local/share/devdocs"
+
+type DocMeta struct {
+	Release string `json:"release"`
+	Version string `json:"version"`
+	Mtime   int64  `json:"mtime"`
+}
 
 type Cache struct {
 	BaseDir string
@@ -29,28 +35,27 @@ func (c *Cache) GetDocPath(slug string) string {
 	return filepath.Join(c.BaseDir, slug)
 }
 
-func (c *Cache) SaveMtime(slug string, mtime int64) error {
-	path := filepath.Join(c.BaseDir, slug, "mtime")
-	return os.WriteFile(path, []byte(fmt.Sprintf("%d", mtime)), 0644)
+func (c *Cache) SaveMeta(slug string, meta DocMeta) error {
+	path := filepath.Join(c.BaseDir, slug, "meta.json")
+	data, err := json.Marshal(meta)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0644)
 }
 
-func (c *Cache) GetMtime(slug string) (int64, error) {
-	path := filepath.Join(c.BaseDir, slug, "mtime")
+func (c *Cache) GetMeta(slug string) (DocMeta, error) {
+	path := filepath.Join(c.BaseDir, slug, "meta.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return 0, err
+		return DocMeta{}, err
 	}
-	return strconv.ParseInt(string(data), 10, 64)
-}
 
-func (c *Cache) SaveIndex(slug string, data []byte) error {
-	path := filepath.Join(c.BaseDir, slug, "index.json")
-	return os.WriteFile(path, data, 0644)
-}
-
-func (c *Cache) SaveDB(slug string, data []byte) error {
-	path := filepath.Join(c.BaseDir, slug, "db.json")
-	return os.WriteFile(path, data, 0644)
+	var meta DocMeta
+	if err := json.Unmarshal(data, &meta); err != nil {
+		return DocMeta{}, err
+	}
+	return meta, nil
 }
 
 func (c *Cache) GetIndex(slug string) ([]byte, error) {
