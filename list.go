@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/charmbracelet/bubbles/list"
-	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/bubbles/v2/list"
+	tea "github.com/charmbracelet/bubbletea/v2"
 	"io"
 	"os"
 )
@@ -72,8 +72,8 @@ func NewListModel(cache *Cache, client *DevDoc) ListModel {
 	}
 }
 
-func (m ListModel) Init() tea.Cmd {
-	return nil
+func (m ListModel) Init() (tea.Model, tea.Cmd) {
+	return m, nil
 }
 
 func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -87,7 +87,7 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q":
 			m.quitting = true
 			return m, tea.Quit
-		case "enter":
+		case "o":
 			if i, ok := m.list.SelectedItem().(docItem); ok {
 				docsets, err := m.client.GetDocumentation(i.slug)
 				if err != nil {
@@ -95,7 +95,7 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				model := NewEntryModel(docsets, m.cache, i.slug)
 				var cmds []tea.Cmd
-				cmd := model.Init()
+				_, cmd := model.Init()
 				cmds = append(cmds, cmd)
 
 				newModel, cmd := model.Update(tea.WindowSizeMsg{Width: m.width, Height: m.height})

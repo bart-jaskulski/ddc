@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/list"
-	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/bubbles/v2/list"
+	tea "github.com/charmbracelet/bubbletea/v2"
 )
 
 type Documentation struct {
@@ -125,7 +125,7 @@ func (d docDelegate) Render(w io.Writer, m list.Model, index int, listItem list.
 	fn := itemStyle.Render
 	if index == m.Index() {
 		fn = func(s ...string) string {
-			return selectedItemStyle.Render("> " + strings.Join(s, " "))
+			return selectedItemStyle.Render(strings.Join(s, " "))
 		}
 	}
 
@@ -165,7 +165,7 @@ func NewProviderModel(docsets []Documentation, cache *Cache, client *DevDoc) Pro
 		cache:    cache,
 	}
 
-	l := list.New(items, delegate, 80, 20)
+	l := list.New(items, delegate, 80, 30)
 	l.Title = "Available Documentation Sets"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
@@ -181,8 +181,8 @@ func NewProviderModel(docsets []Documentation, cache *Cache, client *DevDoc) Pro
 	}
 }
 
-func (m ProviderModel) Init() tea.Cmd {
-	return nil
+func (m ProviderModel) Init() (tea.Model, tea.Cmd) {
+	return m, nil
 }
 
 func (m ProviderModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -258,7 +258,7 @@ func (m ProviderModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selected[i.Slug] = !m.selected[i.Slug]
 			}
 			return m, nil
-		case "enter":
+		case "i":
 			if i, ok := m.list.SelectedItem().(Documentation); ok {
 				if !m.cache.DocsetExists(i.Kind()) {
 					docToDownload := i

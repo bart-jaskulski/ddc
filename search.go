@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/list"
-	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/bubbles/v2/list"
+	tea "github.com/charmbracelet/bubbletea/v2"
 	"github.com/sahilm/fuzzy"
 )
 
@@ -44,11 +44,10 @@ func (d searchDelegate) Render(w io.Writer, m list.Model, index int, listItem li
 }
 
 type SearchModel struct {
-	list     list.Model
-	cache    *Cache
-	query    string
-	err      error
-	quitting bool
+	list  list.Model
+	cache *Cache
+	query string
+	err   error
 }
 
 func NewSearchModel(cache *Cache, query string) (SearchModel, error) {
@@ -94,7 +93,7 @@ func NewSearchModel(cache *Cache, query string) (SearchModel, error) {
 		}
 	}
 
-	l := list.New(results, searchDelegate{}, 80, 20)
+	l := list.New(results, searchDelegate{}, 80, 30)
 	l.Title = fmt.Sprintf("Search results for '%s'", query)
 	l.SetShowStatusBar(true)
 
@@ -105,18 +104,17 @@ func NewSearchModel(cache *Cache, query string) (SearchModel, error) {
 	}, nil
 }
 
-func (m SearchModel) Init() tea.Cmd {
-	return nil
+func (m SearchModel) Init() (tea.Model, tea.Cmd) {
+	return m, nil
 }
 
 func (m SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
-			m.quitting = true
+		case "ctrl+c":
 			return m, tea.Quit
-		case "enter":
+		case "o":
 			if i, ok := m.list.SelectedItem().(searchResult); ok {
 				// Open the selected entry with lynx
 				htmlPath := filepath.Join(m.cache.GetHTMLDir(i.docset), strings.ReplaceAll(i.entry.Path, ".", "/")+".html")
@@ -140,10 +138,6 @@ func (m SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m SearchModel) View() string {
-	if m.quitting {
-		return ""
-	}
-
 	view := "\n" + m.list.View()
 	if m.err != nil {
 		view += "\nError: " + m.err.Error()
