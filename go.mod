@@ -1,4 +1,4 @@
-module github.com/bart-jaskulski/dd
+module github.com/bart-jaskulski/ddc
 
 go 1.23
 

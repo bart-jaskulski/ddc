@@ -23,24 +23,24 @@ A command-line interface for browsing [DevDocs](https://devdocs.io) documentatio
 ## Installation
 
 ```bash
-go install github.com/bart-jaskulski/dd@latest
+go install github.com/bart-jaskulski/ddc@latest
 ```
 
 ## Usage
 
 ### List installed documentation
 ```bash
-devdocs list
+ddc list
 ```
 
 ### Search documentation
 ```bash
-devdocs search <query>
+ddc search <query>
 ```
 
 ### Browse documentation
 ```bash
-devdocs view <docset>
+ddc view <docset>
 ```
 
 Documentation is cached in `~/.local/share/devdocs` by default.

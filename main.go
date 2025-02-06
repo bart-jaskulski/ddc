@@ -11,7 +11,8 @@ import (
 )
 
 var rootCmd = &cli.Command{
-	Name:  "dd",
+  EnableShellCompletion: true,
+	Name:  "ddc",
 	Usage: "DevDocs CLI browser",
 	// Action: func(context.Context, *cli.Command) error {
 	// 	return runDoc()
@@ -75,7 +76,7 @@ var rootCmd = &cli.Command{
 				client := newDocs(cache)
 
 				if !client.IsDocSetInstalled(slug) {
-					return cli.Exit(fmt.Sprintf("Documentation %s is not installed. Use 'dd download %s' first", slug, slug), 1)
+					return cli.Exit(fmt.Sprintf("Documentation %s is not installed. Use 'ddc download %s' first", slug, slug), 1)
 				}
 
 				docsets, err := client.GetDocumentation(slug)
