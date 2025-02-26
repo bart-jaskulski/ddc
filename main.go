@@ -10,33 +10,131 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+// runView starts a TUI to view documentation entries for a given slug
+func runView(slug string) error {
+	cache := newCache()
+	client := newDocs(cache)
+
+	if !client.IsDocSetInstalled(slug) {
+		return cli.Exit(fmt.Sprintf("Documentation %s is not installed. Use 'ddc download %s' first", slug, slug), 1)
+	}
+
+	docsets, err := client.GetDocumentation(slug)
+	if err != nil {
+		return err
+	}
+
+	model := NewEntryModel(docsets, cache, slug)
+	p := tea.NewProgram(model, tea.WithAltScreen())
+
+	_, err = p.Run()
+	return err
+}
+
+// runSearch starts a TUI to search with an optional docset filter
+func runSearch(query string, docset ...string) error {
+	cache := newCache()
+
+	model, err := NewSearchModel(cache, query, docset...)
+	if err != nil {
+		return err
+	}
+
+	p := tea.NewProgram(model, tea.WithAltScreen())
+	_, err = p.Run()
+	return err
+}
+
+// runDownload starts a TUI to list and download documentation sets
+func runDownload() error {
+	cache := newCache()
+	client := newDocs(cache)
+
+	docsets, err := ListDocumentations()
+	if err != nil {
+		return err
+	}
+
+	model := NewProviderModel(docsets, cache, client)
+	p := tea.NewProgram(model)
+
+	_, err = p.Run()
+	return err
+}
+
+// runList starts a TUI to list downloaded documentation sets
+func runList() error {
+	cache := newCache()
+	client := newDocs(cache)
+
+	model := NewListModel(cache, client)
+	p := tea.NewProgram(model, tea.WithAltScreen())
+
+	_, err := p.Run()
+	return err
+}
+
 var rootCmd = &cli.Command{
-  EnableShellCompletion: true,
-	Name:  "ddc",
-	Usage: "DevDocs CLI browser",
-	// Action: func(context.Context, *cli.Command) error {
-	// 	return runDoc()
-	// },
+	EnableShellCompletion: true,
+	Name:                  "ddc",
+	Usage:                 "DevDocs CLI browser",
+	Action: func(ctx context.Context, cmd *cli.Command) error {
+		// Implement the smart command logic here
+		args := cmd.Args().Slice()
+		cache := newCache()
+		client := newDocs(cache)
+
+		switch cmd.Args().Len() {
+		case 0:
+			return runList()
+		case 1:
+			// One argument - could be a documentation set or a search term
+			firstArg := cmd.Args().First()
+
+			// Check if it's an installed documentation set
+			if client.IsDocSetInstalled(firstArg) {
+				// It's a doc set, view it
+				return runView(firstArg)
+			} else {
+				// Not a doc set, treat as search query across all docs
+				return runSearch(firstArg)
+			}
+		default:
+			// Multiple arguments - first arg is the doc set, rest is the search query
+			docSet := args[0]
+			searchQuery := args[1]
+
+			// For multiple search terms, join them
+			for i := 2; i < cmd.Args().Len(); i++ {
+				searchQuery += " " + args[i]
+			}
+
+			// If the doc set exists, search within it
+			if client.IsDocSetInstalled(docSet) {
+				// Search within the specified doc set
+				return runSearch(searchQuery, docSet)
+			} else {
+				// If doc set doesn't exist, treat all args as a search query
+				fullQuery := args[0]
+				for i := 1; i < cmd.Args().Len(); i++ {
+					fullQuery += " " + args[i]
+				}
+
+				return runSearch(fullQuery)
+			}
+		}
+	},
 	Commands: []*cli.Command{
 		{
 			Name:    "search",
 			Aliases: []string{"s"},
 			Usage:   "Search across all installed documentation sets",
 			Action: func(ctx context.Context, cmd *cli.Command) error {
-				if len(cmd.Args().Slice()) != 1 {
+				if cmd.Args().Len() != 1 {
 					return cli.Exit("Please provide a search query", 1)
 				}
 				query := cmd.Args().First()
-				cache := newCache()
-
-				model, err := NewSearchModel(cache, query)
-				if err != nil {
-					return err
-				}
-
-				p := tea.NewProgram(model, tea.WithAltScreen())
-				_, err = p.Run()
-				return err
+				return runSearch(query)
 			},
 		},
 		{
@@ -44,23 +142,7 @@ var rootCmd = &cli.Command{
 			Aliases: []string{"dl"},
 			Usage:   "List and download documentation sets",
 			Action: func(ctx context.Context, cmd *cli.Command) error {
-				cache := newCache()
-				client := newDocs(cache)
-
-				docsets, err := ListDocumentations()
-				if err != nil {
-					return err
-				}
-
-				model := NewProviderModel(docsets, cache, client)
-				p := tea.NewProgram(model)
-
-				_, err = p.Run()
-				if err != nil {
-					return err
-				}
-
-				return nil
+				return runDownload()
 			},
 		},
 		{
@@ -72,28 +154,7 @@ var rootCmd = &cli.Command{
 					return cli.Exit("Please provide a documentation name (e.g., wordpress)", 1)
 				}
 				slug := cmd.Args().First()
-				cache := newCache()
-				client := newDocs(cache)
-
-				if !client.IsDocSetInstalled(slug) {
-					return cli.Exit(fmt.Sprintf("Documentation %s is not installed. Use 'ddc download %s' first", slug, slug), 1)
-				}
-
-				docsets, err := client.GetDocumentation(slug)
-				if err != nil {
-					return err
-				}
-
-				model := NewEntryModel(docsets, cache, slug)
-				p := tea.NewProgram(model, tea.WithAltScreen())
-
-				_, err = p.Run()
-				if err != nil {
-					return err
-				}
-
-				return nil
-
+				return runView(slug)
 			},
 		},
 		{
@@ -101,14 +162,7 @@ var rootCmd = &cli.Command{
 			Aliases: []string{"ls"},
 			Usage:   "List downloaded documentation sets",
 			Action: func(ctx context.Context, cmd *cli.Command) error {
-				cache := newCache()
-				client := newDocs(cache)
-
-				model := NewListModel(cache, client)
-				p := tea.NewProgram(model, tea.WithAltScreen())
-
-				_, err := p.Run()
-				return err
+				return runList()
 			},
 		},
 	},

@@ -97,6 +97,9 @@ func (m EntryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "o":
+			if m.list.SettingFilter() {
+				break
+			}
 			selected := m.GetSelected()
 			htmlPath := filepath.Join(m.cache.GetHTMLDir(m.slug), strings.ReplaceAll(selected.Path, ".", string(os.PathSeparator))) + ".html"
 

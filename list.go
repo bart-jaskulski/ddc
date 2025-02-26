@@ -88,6 +88,9 @@ func (m ListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quitting = true
 			return m, tea.Quit
 		case "o":
+			if m.list.SettingFilter() {
+				break
+			}
 			if i, ok := m.list.SelectedItem().(docItem); ok {
 				docsets, err := m.client.GetDocumentation(i.slug)
 				if err != nil {

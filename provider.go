@@ -259,6 +259,9 @@ func (m ProviderModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		case "i":
+			if m.list.SettingFilter() {
+				break
+			}
 			if i, ok := m.list.SelectedItem().(Documentation); ok {
 				if !m.cache.DocsetExists(i.Kind()) {
 					docToDownload := i
@@ -276,6 +279,9 @@ func (m ProviderModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		case "x":
+			if m.list.SettingFilter() {
+				break
+			}
 			if i, ok := m.list.SelectedItem().(Documentation); ok {
 				if m.cache.DocsetExists(i.Kind()) {
 					m.confirming = i.Kind()
@@ -283,6 +289,9 @@ func (m ProviderModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		case "y":
+			if m.list.SettingFilter() {
+				break
+			}
 			if m.confirming != "" {
 				slug := m.confirming
 				m.confirming = ""
@@ -293,6 +302,9 @@ func (m ProviderModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		case "n":
+			if m.list.SettingFilter() {
+				break
+			}
 			if m.confirming != "" {
 				m.confirming = ""
 				return m, nil

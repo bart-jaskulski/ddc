@@ -44,36 +44,36 @@ func (d searchDelegate) Render(w io.Writer, m list.Model, index int, listItem li
 }
 
 type SearchModel struct {
-	list  list.Model
-	cache *Cache
-	query string
-	err   error
+	list   list.Model
+	cache  *Cache
+	query  string
+	docset string // Optional docset to search within
+	err    error
 }
 
-func NewSearchModel(cache *Cache, query string) (SearchModel, error) {
-	// Search across all installed documentations
-	var results []list.Item
-	entries, err := os.ReadDir(cache.BaseDir)
-	if err != nil {
-		return SearchModel{}, err
+// NewSearchModel creates a search model that searches across all documentations
+// or within a specific docset if specified
+func NewSearchModel(cache *Cache, query string, docset ...string) (SearchModel, error) {
+	var specificDocset string
+	if len(docset) > 0 && docset[0] != "" {
+		specificDocset = docset[0]
 	}
 
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
+	var results []list.Item
 
-		slug := entry.Name()
-		indexData, err := cache.GetIndex(slug)
+	// If a specific docset is provided, only search within that docset
+	if specificDocset != "" {
+		// Check if the docset exists
+		indexData, err := cache.GetIndex(specificDocset)
 		if err != nil {
-			continue
+			return SearchModel{}, fmt.Errorf("documentation %s is not installed: %w", specificDocset, err)
 		}
 
 		var index struct {
 			Entries []DocumentEntry `json:"entries"`
 		}
 		if err := json.Unmarshal(indexData, &index); err != nil {
-			continue
+			return SearchModel{}, fmt.Errorf("failed to parse index for %s: %w", specificDocset, err)
 		}
 
 		// Create a slice of strings for fuzzy matching
@@ -86,21 +86,68 @@ func NewSearchModel(cache *Cache, query string) (SearchModel, error) {
 		matches := fuzzy.Find(query, names)
 		for _, match := range matches {
 			results = append(results, searchResult{
-				docset:  slug,
+				docset:  specificDocset,
 				entry:   index.Entries[match.Index],
 				matches: match.MatchedIndexes,
 			})
 		}
+	} else {
+		// Search across all installed documentations
+		entries, err := os.ReadDir(cache.BaseDir)
+		if err != nil {
+			return SearchModel{}, err
+		}
+
+		for _, entry := range entries {
+			if !entry.IsDir() {
+				continue
+			}
+
+			slug := entry.Name()
+			indexData, err := cache.GetIndex(slug)
+			if err != nil {
+				continue
+			}
+
+			var index struct {
+				Entries []DocumentEntry `json:"entries"`
+			}
+			if err := json.Unmarshal(indexData, &index); err != nil {
+				continue
+			}
+
+			// Create a slice of strings for fuzzy matching
+			names := make([]string, len(index.Entries))
+			for i, entry := range index.Entries {
+				names[i] = entry.Name
+			}
+
+			// Perform fuzzy search
+			matches := fuzzy.Find(query, names)
+			for _, match := range matches {
+				results = append(results, searchResult{
+					docset:  slug,
+					entry:   index.Entries[match.Index],
+					matches: match.MatchedIndexes,
+				})
+			}
+		}
+	}
+
+	title := fmt.Sprintf("Search results for '%s'", query)
+	if specificDocset != "" {
+		title += fmt.Sprintf(" in %s", specificDocset)
 	}
 
 	l := list.New(results, searchDelegate{}, 80, 30)
-	l.Title = fmt.Sprintf("Search results for '%s'", query)
+	l.Title = title
 	l.SetShowStatusBar(true)
 
 	return SearchModel{
-		list:  l,
-		cache: cache,
-		query: query,
+		list:   l,
+		cache:  cache,
+		query:  query,
+		docset: specificDocset,
 	}, nil
 }
 
@@ -115,6 +162,9 @@ func (m SearchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "o":
+			if m.list.SettingFilter() {
+				break
+			}
 			if i, ok := m.list.SelectedItem().(searchResult); ok {
 				// Open the selected entry with lynx
 				htmlPath := filepath.Join(m.cache.GetHTMLDir(i.docset), strings.ReplaceAll(i.entry.Path, ".", "/")+".html")
