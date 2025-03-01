@@ -46,13 +46,25 @@ func runSearch(query string, docset ...string) error {
 }
 
 // runDownload starts a TUI to list and download documentation sets
-func runDownload() error {
+func runDownload(docs string) error {
 	cache := newCache()
 	client := newDocs(cache)
 
 	docsets, err := ListDocumentations()
 	if err != nil {
 		return err
+	}
+
+	if docs != "" {
+		// Filter docsets by provided slugs
+		for _, doc := range docsets {
+			if doc.Slug == docs {
+				if !client.IsDocSetInstalled(docs) {
+					client.DownloadDocSet(&doc)
+				}
+			}
+		}
+		return nil
 	}
 
 	model := NewProviderModel(docsets, cache, client)
@@ -142,7 +154,7 @@ var rootCmd = &cli.Command{
 			Aliases: []string{"dl"},
 			Usage:   "List and download documentation sets",
 			Action: func(ctx context.Context, cmd *cli.Command) error {
-				return runDownload()
+				return runDownload(cmd.Args().First())
 			},
 		},
 		{
