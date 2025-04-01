@@ -5,8 +5,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/v2/list"
 	tea "github.com/charmbracelet/bubbletea/v2"
@@ -101,9 +99,18 @@ func (m EntryModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 			selected := m.GetSelected()
-			htmlPath := filepath.Join(m.cache.GetHTMLDir(m.slug), strings.ReplaceAll(selected.Path, ".", string(os.PathSeparator))) + ".html"
-
-			cmd := exec.Command("lynx", htmlPath)
+			
+			// Get the file path and fragment
+			htmlPath, fragment := m.cache.GetHTMLPath(m.slug, selected.Path)
+			
+			// Pass the path with fragment to lynx
+			// args := []string{htmlPath}
+			// if fragment != "" {
+			// 	// For lynx, we can use -jumpfile to jump to a specific fragment
+			// 	args = append(args, "-jumpfile", fragment[1:]) // Remove the # from fragment
+			// }
+			
+			cmd := exec.Command("lynx", htmlPath + "#" + fragment)
 			cmd.Stdin = os.Stdin
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
